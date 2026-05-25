@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PVE Backup Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;color:#333;min-height:100vh}
+/* Nav */
+nav{background:#1a1a2e;color:#fff;padding:0 24px;display:flex;align-items:center;height:56px;gap:32px;position:sticky;top:0;z-index:100}
+nav .brand{font-size:18px;font-weight:700;letter-spacing:.3px}
+nav .brand span{color:#e94560}
+nav a{color:#ccc;text-decoration:none;font-size:14px;padding:4px 0;border-bottom:2px solid transparent;transition:.2s;cursor:pointer}
+nav a:hover,nav a.active{color:#fff;border-bottom-color:#e94560}
+/* Container */
+.container{max-width:1200px;margin:0 auto;padding:24px}
+/* Cards */
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px;margin-bottom:20px}
+.card h2{font-size:16px;margin-bottom:16px;color:#1a1a2e;display:flex;align-items:center;gap:8px}
+.card h2 .badge{background:#e94560;color:#fff;font-size:11px;padding:2px 8px;border-radius:10px}
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+/* Stat card */
+.stat-card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px;text-align:center}
+.stat-card .num{font-size:32px;font-weight:700;color:#1a1a2e}
+.stat-card .label{font-size:13px;color:#888;margin-top:4px}
+.stat-card.green .num{color:#27ae60}
+.stat-card.red .num{color:#e74c3c}
+.stat-card.blue .num{color:#3498db}
+.stat-card.orange .num{color:#f39c12}
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #eee}
+th{color:#888;font-weight:600;font-size:12px;text-transform:uppercase}
+tr:hover{background:#f8f9fa}
+.status-badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.status-badge.success{background:#d4edda;color:#155724}
+.status-badge.fail{background:#f8d7da;color:#721c24}
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px}
+.form-group input,.form-group select{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;transition:.2s}
+.form-group input:focus{border-color:#e94560;outline:none;box-shadow:0 0 0 3px rgba(233,69,96,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-primary{background:#e94560;color:#fff}
+.btn-primary:hover{background:#d63851}
+.btn-secondary{background:#6c757d;color:#fff}
+.btn-secondary:hover{background:#5a6268}
+.btn-success{background:#27ae60;color:#fff}
+.btn-success:hover{background:#219a52}
+.btn-danger{background:#e74c3c;color:#fff}
+.btn-danger:hover{background:#c0392b}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-group{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #eee}
+.tabs button{padding:10px 24px;border:none;background:none;font-size:14px;font-weight:600;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.tabs button.active{color:#e94560;border-bottom-color:#e94560}
+.tabs button:hover{color:#e94560}
+/* Status dot */
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.dot.green{background:#27ae60}
+.dot.red{background:#e74c3c}
+.dot.yellow{background:#f39c12}
+/* Activity bar */
+.activity-bar{background:#f8f9fa;border-radius:6px;padding:10px 16px;font-size:13px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.activity-bar .label{color:#888}
+.activity-bar .value{font-weight:600;color:#333}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;justify-content:center;align-items:center}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h3{margin-bottom:16px}
+.modal .btn-group{justify-content:flex-end}
+/* Scrollable table wrapper */
+.table-wrap{overflow-x:auto}
+/* Collapsible sections */
+.section-toggle{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;padding:8px 0;font-weight:600;font-size:14px;color:#1a1a2e}
+.section-toggle:hover{color:#e94560}
+.section-toggle .arrow{transition:.2s;font-size:12px}
+.section-toggle.open .arrow{transform:rotate(90deg)}
+.section-body{padding:8px 0 0 16px}
+/* Checkbox toggle */
+.toggle{position:relative;display:inline-block;width:44px;height:24px;vertical-align:middle;margin-right:8px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;inset:0;background:#ccc;border-radius:24px;cursor:pointer;transition:.3s}
+.toggle .slider::before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked+.slider{background:#27ae60}
+.toggle input:checked+.slider::before{transform:translateX(20px)}
+/* PVE status grid */
+.pve-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.pve-item{background:#f8f9fa;border-radius:8px;padding:14px}
+.pve-item .val{font-size:20px;font-weight:700;color:#1a1a2e}
+.pve-item .lbl{font-size:12px;color:#888;margin-top:2px}
+/* Alerts */
+.alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;display:none}
+.alert.show{display:block}
+.alert-success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+.alert-danger{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+.alert-info{background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb}
+/* Loading */
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #eee;border-top-color:#e94560;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:#aaa}
+.empty .icon{font-size:48px;margin-bottom:12px}
+/* Login overlay */
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e,#16213e);z-index:9999;justify-content:center;align-items:center}
+.login-box{background:#fff;border-radius:12px;padding:40px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-box h1{font-size:22px;text-align:center;margin-bottom:8px;color:#1a1a2e}
+.login-box h1 span{color:#e94560}
+.login-box .sub{text-align:center;color:#888;font-size:13px;margin-bottom:28px}
+.login-box .error{color:#e74c3c;font-size:13px;text-align:center;margin-bottom:12px;display:none}
+.login-box .form-group{margin-bottom:16px}
+.login-box .form-group label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:4px}
+.login-box .form-group input{width:100%;padding:10px 14px;border:2px solid #eee;border-radius:8px;font-size:14px;transition:.2s}
+.login-box .form-group input:focus{border-color:#e94560;outline:none}
+.login-box .btn{width:100%;padding:11px;background:#e94560;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s}
+.login-box .btn:hover{background:#d63851}
+.login-box .btn:disabled{opacity:.6;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div class="login-overlay" id="loginOverlay" style="display:flex">
+  <div class="login-box">
+    <h1>PVE <span>Backup</span></h1>
+    <div class="sub">请输入管理员凭证</div>
+    <div class="error" id="loginError">用户名或密码错误</div>
+    <div class="form-group"><label>用户名</label><input id="loginUser" type="text" placeholder="admin" autocomplete="username"></div>
+    <div class="form-group"><label>密码</label><input id="loginPass" type="password" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn" id="loginBtn" onclick="doLogin()">登 录</button>
+  </div>
+</div>
+
+<div id="appContent" style="display:none">
+<nav>
+  <div class="brand">PVE <span>Backup</span></div>
+  <a class="active" data-tab="dashboard" onclick="switchTab('dashboard')">仪表板</a>
+  <a data-tab="config" onclick="switchTab('config')">配置</a>
+  <a data-tab="backups" onclick="switchTab('backups')">备份</a>
+  <a data-tab="restore" onclick="switchTab('restore')">恢复</a>
+  <a data-tab="pve" onclick="switchTab('pve')">PVE监控</a>
+  <a style="margin-left:auto;color:#e94560;cursor:pointer" onclick="showChangePassword()">修改密码</a>
+<a style="color:#e94560" onclick="doLogout()">退出</a>
+</nav>
+
+<div class="container">
+  <div id="alert" class="alert"></div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="tab-dashboard" class="tab-content">
+    <div class="activity-bar">
+      <span class="label">当前状态:</span>
+      <span class="value" id="backupActivity">-</span>
+      <span style="color:#ccc">|</span>
+      <span class="label">恢复:</span>
+      <span class="value" id="restoreActivity">-</span>
+      <span style="color:#ccc">|</span>
+      <span class="label">定时:</span>
+      <span class="value" id="cronStatus">-</span>
+      <span style="flex:1"></span>
+      <button class="btn btn-primary btn-sm" onclick="runBackup()">▶ 立即备份</button>
+    </div>
+
+    <div class="grid-4" id="statsCards">
+      <div class="stat-card blue"><div class="num" id="statTotal">-</div><div class="label">总备份次数</div></div>
+      <div class="stat-card green"><div class="num" id="statSuccess">-</div><div class="label">成功</div></div>
+      <div class="stat-card red"><div class="num" id="statFail">-</div><div class="label">失败</div></div>
+      <div class="stat-card orange"><div class="num" id="statAvailable">-</div><div class="label">可用备份文件</div></div>
+    </div>
+
+    <div class="card">
+      <h2>最近备份记录</h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>时间</th><th>状态</th><th>文件</th><th>信息</th></tr></thead><tbody id="backupHistoryBody"><tr><td colspan="4" class="empty">加载中...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONFIG ==================== -->
+  <div id="tab-config" class="tab-content" style="display:none">
+    <div class="card">
+      <h2>PVE连接配置</h2>
+      <div class="form-row">
+        <div class="form-group"><label>PVE主机地址</label><input id="cfg_host" placeholder="192.168.1.100"></div>
+        <div class="form-group"><label>SSH端口</label><input id="cfg_port" type="number" value="22"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>SSH用户名</label><input id="cfg_user" value="root"></div>
+        <div class="form-group"><label>SSH密码</label><input id="cfg_pass" type="password" placeholder="留空使用密钥"></div>
+      </div>
+      <div class="form-group"><label>SSH密钥文件路径</label><input id="cfg_key" placeholder="/data/id_rsa"></div>
+    </div>
+
+    <div class="card">
+      <h2>备份配置</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>启用本地备份</label>
+          <label class="toggle"><input id="cfg_local" type="checkbox"><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <label>本地保留数量</label>
+          <input id="cfg_keep" type="number" value="5">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>备份VMID (逗号分隔,留空=全部)</label><input id="cfg_vmid" placeholder="100,101,102"></div>
+        <div class="form-group"><label>存储位置</label><input id="cfg_storage" value="local"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>备份模式</label><select id="cfg_mode"><option value="snapshot">snapshot</option><option value="stop">stop</option><option value="suspend">suspend</option></select></div>
+        <div class="form-group"><label>压缩模式</label><select id="cfg_compress"><option value="zstd">zstd</option><option value="gzip">gzip</option><option value="lzo">lzo</option><option value="none">none</option></select></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>WebDAV配置</h2>
+      <div class="form-group">
+        <label><label class="toggle"><input id="cfg_webdav_enable" type="checkbox"><span class="slider"></span></label> 启用WebDAV</label>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>WebDAV URL</label><input id="cfg_webdav_url" placeholder="https://example.com/dav"></div>
+        <div class="form-group"><label>路径</label><input id="cfg_webdav_path" placeholder="/backups"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>用户名</label><input id="cfg_webdav_user"></div>
+        <div class="form-group"><label>密码</label><input id="cfg_webdav_pass" type="password"></div>
+      </div>
+      <div class="form-group"><label>WebDAV保留数量</label><input id="cfg_webdav_keep" type="number" value="7"></div>
+    </div>
+
+    <div class="card">
+      <h2>定时配置</h2>
+      <div class="form-row">
+        <div class="form-group"><label>Cron 表达式</label><input id="cfg_cron" value="0 3 * * *" placeholder="0 3 * * *"></div>
+        <div class="form-group"><label>重试次数</label><input id="cfg_retry" type="number" value="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>重试间隔(秒)</label><input id="cfg_retry_int" type="number" value="60"></div>
+        <div class="form-group">
+          <label><label class="toggle"><input id="cfg_enabled" type="checkbox"><span class="slider"></span></label> 启用定时备份</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== NOTIFICATION CONFIG ==================== -->
+    <div class="card">
+      <h2>通知配置</h2>
+      <div class="form-group">
+        <label><label class="toggle"><input id="cfg_notify" type="checkbox" onchange="toggleNotifyChannels()"><span class="slider"></span></label> 启用通知（关闭后下方所有渠道都不会发送）</label>
+      </div>
+      <div id="notifyChannelsSection" style="display:none;border-top:1px solid #eee;padding-top:16px;margin-top:8px">
+        <p style="color:#888;font-size:13px;margin-bottom:16px">启用一个或多个通知渠道，备份/恢复任务执行时会通过已启用的渠道发送通知。</p>
+
+        <!-- Webhook -->
+        <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyWebhook')">
+          <span class="arrow">▶</span>
+          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_webhook_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          Webhook 通用通知
+        </div>
+        <div id="notifyWebhook" class="section-body" style="display:none">
+          <div class="form-group">
+            <label>Webhook URL</label>
+            <input id="ch_webhook_url" placeholder="https://oapi.dingtalk.com/robot/send?access_token=...">
+          </div>
+          <p style="color:#999;font-size:12px;margin-top:-8px;margin-bottom:12px">📌 通用Webhook，POST JSON到指定URL，适用于钉钉/飞书/企业微信自定义机器人</p>
+        </div>
+
+        <!-- Bark -->
+        <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyBark')">
+          <span class="arrow">▶</span>
+          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_bark_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          Bark (iOS推送)
+        </div>
+        <div id="notifyBark" class="section-body" style="display:none">
+          <div class="form-group"><label>Bark Key</label><input id="ch_bark_key" placeholder="xxxxxxxxxxxx"></div>
+          <div class="form-group"><label>推送服务器</label><input id="ch_bark_server" placeholder="https://api.day.app" value="https://api.day.app"></div>
+          <p style="color:#999;font-size:12px;margin-top:-8px;margin-bottom:12px">📌 在iOS设备安装 Bark App，复制推送Key填入。支持自建服务器，修改"推送服务器"地址即可</p>
+        </div>
+
+        <!-- PushDeer -->
+        <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyPushdeer')">
+          <span class="arrow">▶</span>
+          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_pushdeer_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          PushDeer
+        </div>
+        <div id="notifyPushdeer" class="section-body" style="display:none">
+          <div class="form-group"><label>PushKey</label><input id="ch_pushdeer_key" placeholder="PDxxx..."></div>
+          <div class="form-group"><label>API服务器</label><input id="ch_pushdeer_server" placeholder="https://api2.pushdeer.com" value="https://api2.pushdeer.com"></div>
+          <p style="color:#999;font-size:12px;margin-top:-8px;margin-bottom:12px">📌 支持iOS/Android/桌面端，https://pushdeer.com 获取 PushKey，也可自建服务器</p>
+        </div>
+
+        <!-- Server酱 -->
+        <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyServerchan')">
+          <span class="arrow">▶</span>
+          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_serverchan_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          Server酱 (微信推送)
+        </div>
+        <div id="notifyServerchan" class="section-body" style="display:none">
+          <div class="form-group"><label>SendKey</label><input id="ch_serverchan_key" placeholder="SCTxxx..."></div>
+          <p style="color:#999;font-size:12px;margin-top:-8px;margin-bottom:12px">📌 Server酱·Turbo版，推送通知到微信，https://sct.ftqq.com 注册获取 SendKey</p>
+        </div>
+
+        <div class="btn-group" style="margin-top:12px">
+          <button class="btn btn-secondary btn-sm" onclick="testNotification()">📤 测试通知</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+      <button class="btn btn-success" onclick="saveAndRun()">💾 保存并立即运行</button>
+    </div>
+  </div>
+
+  <!-- ==================== BACKUPS ==================== -->
+  <div id="tab-backups" class="tab-content" style="display:none">
+    <div class="card">
+      <h2>可用备份文件 <span class="badge" id="backupCount">0</span></h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>文件名</th><th>大小</th><th>时间</th><th>来源</th><th>操作</th></tr></thead><tbody id="backupListBody"><tr><td colspan="5" class="empty"><div class="icon">📂</div>暂无备份文件</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== RESTORE ==================== -->
+  <div id="tab-restore" class="tab-content" style="display:none">
+    <div class="card">
+      <h2>恢复操作</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:16px">选择一个备份文件恢复到PVE主机。恢复前请确认目标VMID未被占用。</p>
+      <div class="form-row">
+        <div class="form-group"><label>选择备份文件</label><select id="restoreFile" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px"><option value="">-- 先刷新备份列表 --</option></select></div>
+        <div class="form-group"><label>目标VMID (留空=自动)</label><input id="restoreVmid" placeholder="自动检测"></div>
+      </div>
+      <div class="form-group">
+        <label><label class="toggle"><input id="restoreForce" type="checkbox"><span class="slider"></span></label> 强制覆盖已有VM</label>
+      </div>
+      <button class="btn btn-danger" onclick="startRestore()">⚡ 开始恢复</button>
+    </div>
+
+    <div class="card">
+      <h2>恢复历史</h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>时间</th><th>状态</th><th>文件</th><th>目标VMID</th><th>信息</th></tr></thead><tbody id="restoreHistoryBody"><tr><td colspan="5" class="empty">暂无记录</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== PVE MONITOR ==================== -->
+  <div id="tab-pve" class="tab-content" style="display:none">
+    <div class="card">
+      <h2>PVE主机状态</h2>
+      <div id="pveStatusContent"><p style="color:#888">点击刷新按钮加载状态</p></div>
+    </div>
+    <div class="card">
+      <h2>虚拟机/容器列表</h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>VMID</th><th>名称</th><th>类型</th><th>状态</th><th>CPU</th><th>内存</th><th>运行时间</th><th>操作</th></tr></thead><tbody id="containerListBody"><tr><td colspan="8" class="empty">点击刷新</td></tr></tbody></table>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="refreshPVE()">🔄 刷新PVE状态</button>
+      <button class="btn btn-secondary" onclick="refreshContainers()">🔄 刷新容器列表</button>
+      <button class="btn btn-danger" onclick="stopAllTasks()">⏹ 停止所有任务</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Restore confirm modal -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3>⚠️ 确认恢复</h3>
+    <p id="confirmText" style="margin-bottom:16px;color:#555"></p>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-danger" id="confirmBtn" onclick="confirmRestore()">确认恢复</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change password modal -->
+<div class="modal-overlay" id="changePwdModal">
+  <div class="modal">
+    <h3>修改密码</h3>
+    <div class="form-group"><label>当前密码</label><input id="oldPwd" type="password" placeholder="输入当前密码"></div>
+    <div class="form-group"><label>新密码</label><input id="newPwd" type="password" placeholder="至少4个字符"></div>
+    <div class="form-group"><label>确认新密码</label><input id="confirmPwd" type="password" placeholder="再次输入新密码"></div>
+    <div id="changePwdError" style="color:#e74c3c;font-size:13px;margin-bottom:12px;display:none"></div>
+    <div class="btn-group">
+      <button class="btn btn-secondary" onclick="closeChangePassword()">取消</button>
+      <button class="btn btn-primary" id="changePwdBtn" onclick="doChangePassword()">确认修改</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let state = { config: {}, backups: [], restoreTarget: null };
+
+// ── Tab switching ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.getElementById('tab-' + name).style.display = 'block';
+  document.querySelectorAll('nav a').forEach(el => el.classList.remove('active'));
+  document.querySelector(`nav a[data-tab="${name}"]`).classList.add('active');
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'backups') refreshBackups();
+  if (name === 'pve') { refreshPVE(); refreshContainers(); }
+  if (name === 'restore') { refreshRestoreHistory(); refreshRestoreFiles(); }
+}
+
+// ── Alert ──
+function showAlert(msg, type) {
+  const el = document.getElementById('alert');
+  el.textContent = msg;
+  el.className = 'alert alert-' + type + ' show';
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ── Auth ──
+function showApp() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+}
+function hideApp() {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('appContent').style.display = 'none';
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/api/check_auth', { credentials: 'include' });
+    const data = await res.json();
+    if (data.authenticated) {
+      showApp();
+      refreshDashboard();
+    }
+  } catch(e) {}
+}
+
+async function doLogin() {
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  btn.disabled = true;
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: document.getElementById('loginUser').value, password: document.getElementById('loginPass').value }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showApp();
+      refreshDashboard();
+    } else {
+      err.style.display = 'block';
+    }
+  } catch(e) {
+    err.textContent = '网络错误';
+    err.style.display = 'block';
+  }
+  btn.disabled = false;
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  hideApp();
+}
+
+// ── API helper ──
+async function api(method, path, body) {
+  const opts = { method, headers: {}, credentials: 'include' };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch('/api' + path, opts);
+  if (r.status === 401) {
+    hideApp();
+    throw new Error('未登录');
+  }
+  if (path.includes('/download_backup')) return r;
+  return r.json();
+}
+
+// ── Dashboard ──
+async function refreshDashboard() {
+  try {
+    const [status, dash] = await Promise.all([api('GET', '/status'), api('GET', '/dashboard_data')]);
+    document.getElementById('backupActivity').textContent = status.backup_activity || '-';
+    document.getElementById('restoreActivity').textContent = status.restore_activity || '-';
+    document.getElementById('cronStatus').textContent = status.enabled ? (status.cron || '-') : '未启用';
+    document.getElementById('statTotal').textContent = dash.backup_stats.total;
+    document.getElementById('statSuccess').textContent = dash.backup_stats.successful;
+    document.getElementById('statFail').textContent = dash.backup_stats.failed;
+    document.getElementById('statAvailable').textContent = dash.available_backups.total;
+
+    const bh = await api('GET', '/backup_history');
+    const tbody = document.getElementById('backupHistoryBody');
+    if (!bh.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty"><div class="icon">📋</div>暂无备份记录</td></tr>';
+    } else {
+      tbody.innerHTML = bh.slice(0, 20).map(e => `<tr>
+        <td>${new Date(e.timestamp * 1000).toLocaleString()}</td>
+        <td><span class="status-badge ${e.success ? 'success' : 'fail'}">${e.success ? '成功' : '失败'}</span></td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.filename || '-'}</td>
+        <td>${e.message || '-'}</td>
+      </tr>`).join('');
+    }
+  } catch(e) { showAlert('加载仪表板失败: ' + e.message, 'danger'); }
+}
+
+// ── Run backup ──
+async function runBackup() {
+  try {
+    await api('POST', '/run_backup');
+    showAlert('备份任务已启动', 'success');
+    setTimeout(refreshDashboard, 2000);
+  } catch(e) { showAlert('启动备份失败: ' + e.message, 'danger'); }
+}
+
+// ── Config ──
+async function loadConfig() {
+  try {
+    state.config = await api('GET', '/config');
+    const c = state.config;
+    setVal('cfg_host', c.pve_host);
+    setVal('cfg_port', c.ssh_port || 22);
+    setVal('cfg_user', c.ssh_username || 'root');
+    setVal('cfg_pass', c.ssh_password || '');
+    setVal('cfg_key', c.ssh_key_file || '');
+    setChecked('cfg_local', c.enable_local_backup !== false);
+    setVal('cfg_keep', c.keep_backup_num || 5);
+    setVal('cfg_vmid', c.backup_vmid || '');
+    setVal('cfg_storage', c.storage_name || 'local');
+    setVal('cfg_mode', c.backup_mode || 'snapshot');
+    setVal('cfg_compress', c.compress_mode || 'zstd');
+    setChecked('cfg_autodel', false); // removed
+    setChecked('cfg_webdav_enable', c.enable_webdav || false);
+    setVal('cfg_webdav_url', c.webdav_url || '');
+    setVal('cfg_webdav_path', c.webdav_path || '');
+    setVal('cfg_webdav_user', c.webdav_username || '');
+    setVal('cfg_webdav_pass', c.webdav_password || '');
+    setVal('cfg_webdav_keep', c.webdav_keep_backup_num || 7);
+    setVal('cfg_cron', c.cron || '0 3 * * *');
+    setVal('cfg_retry', c.retry_count || 0);
+    setVal('cfg_retry_int', c.retry_interval || 60);
+    setChecked('cfg_notify', c.notify || false);
+    setChecked('cfg_enabled', c.enabled || false);
+
+    // Notification channels
+    var nc = c.notify_channels || {};
+    setChecked('ch_webhook_enabled', nc.webhook && nc.webhook.enabled);
+    setVal('ch_webhook_url', (nc.webhook && nc.webhook.url) || '');
+    setChecked('ch_bark_enabled', nc.bark && nc.bark.enabled);
+    setVal('ch_bark_key', (nc.bark && nc.bark.key) || '');
+    setVal('ch_bark_server', (nc.bark && nc.bark.server) || 'https://api.day.app');
+    setChecked('ch_pushdeer_enabled', nc.pushdeer && nc.pushdeer.enabled);
+    setVal('ch_pushdeer_key', (nc.pushdeer && nc.pushdeer.key) || '');
+    setVal('ch_pushdeer_server', (nc.pushdeer && nc.pushdeer.server) || 'https://api2.pushdeer.com');
+    setChecked('ch_serverchan_enabled', nc.serverchan && nc.serverchan.enabled);
+    setVal('ch_serverchan_key', (nc.serverchan && nc.serverchan.key) || '');
+    toggleNotifyChannels();
+  } catch(e) { showAlert('加载配置失败: ' + e.message, 'danger'); }
+}
+
+function getVal(id) { return document.getElementById(id).value; }
+function setVal(id, v) { document.getElementById(id).value = v ?? ''; }
+function setChecked(id, v) { document.getElementById(id).checked = !!v; }
+
+function collectConfig() {
+  var ch = function(id) { return document.getElementById(id).checked; };
+  return {
+    pve_host: getVal('cfg_host'), ssh_port: parseInt(getVal('cfg_port')) || 22,
+    ssh_username: getVal('cfg_user'), ssh_password: getVal('cfg_pass'),
+    ssh_key_file: getVal('cfg_key'),
+    enable_local_backup: document.getElementById('cfg_local').checked,
+    keep_backup_num: parseInt(getVal('cfg_keep')) || 5,
+    backup_vmid: getVal('cfg_vmid'), storage_name: getVal('cfg_storage'),
+    backup_mode: getVal('cfg_mode'), compress_mode: getVal('cfg_compress'),
+    enable_webdav: document.getElementById('cfg_webdav_enable').checked,
+    webdav_url: getVal('cfg_webdav_url'), webdav_path: getVal('cfg_webdav_path'),
+    webdav_username: getVal('cfg_webdav_user'), webdav_password: getVal('cfg_webdav_pass'),
+    webdav_keep_backup_num: parseInt(getVal('cfg_webdav_keep')) || 7,
+    cron: getVal('cfg_cron'), retry_count: parseInt(getVal('cfg_retry')) || 0,
+    retry_interval: parseInt(getVal('cfg_retry_int')) || 60,
+    notify: document.getElementById('cfg_notify').checked,
+    notify_channels: {
+      webhook: { enabled: ch('ch_webhook_enabled'), url: getVal('ch_webhook_url') },
+      bark: { enabled: ch('ch_bark_enabled'), key: getVal('ch_bark_key'), server: getVal('ch_bark_server') || 'https://api.day.app' },
+      pushdeer: { enabled: ch('ch_pushdeer_enabled'), key: getVal('ch_pushdeer_key'), server: getVal('ch_pushdeer_server') || 'https://api2.pushdeer.com' },
+      serverchan: { enabled: ch('ch_serverchan_enabled'), key: getVal('ch_serverchan_key') },
+    },
+    enabled: document.getElementById('cfg_enabled').checked,
+  };
+}
+
+async function saveConfig() {
+  try {
+    await api('POST', '/config', collectConfig());
+    showAlert('配置已保存', 'success');
+  } catch(e) { showAlert('保存配置失败: ' + e.message, 'danger'); }
+}
+
+async function saveAndRun() {
+  try {
+    await api('POST', '/config', collectConfig());
+    await api('POST', '/run_backup');
+    showAlert('配置已保存，备份任务已启动', 'success');
+  } catch(e) { showAlert('操作失败: ' + e.message, 'danger'); }
+}
+
+// ── Backups ──
+async function refreshBackups() {
+  try {
+    state.backups = await api('GET', '/available_backups');
+    document.getElementById('backupCount').textContent = state.backups.length;
+    const tbody = document.getElementById('backupListBody');
+    if (!state.backups.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty"><div class="icon">📂</div>暂无备份文件</td></tr>';
+    } else {
+      tbody.innerHTML = state.backups.map(b => `<tr>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.filename}</td>
+        <td>${(b.size_mb || 0).toFixed(2)} MB</td>
+        <td>${b.time_str || '-'}</td>
+        <td>${b.source}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="downloadBackup('${b.filename}','${b.source}')">📥 下载</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteBackup('${b.filename}','${b.source}')">🗑 删除</button>
+          <button class="btn btn-success btn-sm" onclick="quickRestore('${b.filename}','${b.source}')">⚡ 恢复</button>
+        </td>
+      </tr>`).join('');
+    }
+  } catch(e) { showAlert('加载备份列表失败', 'danger'); }
+}
+
+async function downloadBackup(fn, src) {
+  try {
+    const r = await fetch(`/api/download_backup?filename=${encodeURIComponent(fn)}&source=${encodeURIComponent(src)}`);
+    if (!r.ok) { showAlert('下载失败', 'danger'); return; }
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fn;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch(e) { showAlert('下载失败: ' + e.message, 'danger'); }
+}
+
+async function deleteBackup(fn, src) {
+  if (!confirm(`确定删除 ${fn}?`)) return;
+  try {
+    const res = await api('POST', '/delete_backup', { filename: fn, source: src });
+    if (res.success) { showAlert(res.message, 'success'); refreshBackups(); }
+    else { showAlert(res.message, 'danger'); }
+  } catch(e) { showAlert('删除失败', 'danger'); }
+}
+
+function quickRestore(fn, src) {
+  document.getElementById('restoreFile').value = fn + '|' + src;
+  switchTab('restore');
+}
+
+// ── Restore ──
+async function refreshRestoreFiles() {
+  try {
+    const backups = await api('GET', '/available_backups');
+    const sel = document.getElementById('restoreFile');
+    sel.innerHTML = '<option value="">-- 选择备份文件 --</option>' +
+      backups.map(b => `<option value="${b.filename}|${b.source}">${b.filename} (${b.source})</option>`).join('');
+  } catch(e) {}
+}
+
+async function refreshRestoreHistory() {
+  try {
+    const rh = await api('GET', '/restore_history');
+    const tbody = document.getElementById('restoreHistoryBody');
+    if (!rh.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无记录</td></tr>';
+    } else {
+      tbody.innerHTML = rh.map(e => `<tr>
+        <td>${new Date(e.timestamp * 1000).toLocaleString()}</td>
+        <td><span class="status-badge ${e.success ? 'success' : 'fail'}">${e.success ? '成功' : '失败'}</span></td>
+        <td>${e.filename || '-'}</td>
+        <td>${e.target_vmid || '-'}</td>
+        <td>${e.message || '-'}</td>
+      </tr>`).join('');
+    }
+  } catch(e) {}
+}
+
+function startRestore() {
+  const val = document.getElementById('restoreFile').value;
+  if (!val) { showAlert('请选择备份文件', 'danger'); return; }
+  const [fn, src] = val.split('|');
+  const vmid = document.getElementById('restoreVmid').value;
+  const force = document.getElementById('restoreForce').checked;
+  state.restoreTarget = { fn, src, vmid, force };
+  document.getElementById('confirmText').textContent =
+    `即将恢复: ${fn}\n来源: ${src}\n目标VMID: ${vmid || '自动检测'}\n强制覆盖: ${force ? '是' : '否'}\n\n此操作不可撤销，确认继续?`;
+  document.getElementById('confirmModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('confirmModal').classList.remove('active');
+}
+
+async function confirmRestore() {
+  const t = state.restoreTarget;
+  if (!t) return;
+  closeModal();
+  try {
+    const res = await api('POST', '/restore', {
+      filename: t.fn, source: t.src,
+      restore_vmid: t.vmid, restore_force: t.force,
+    });
+    if (res.success) {
+      showAlert(res.message, 'success');
+      setTimeout(() => refreshRestoreHistory(), 2000);
+    } else {
+      showAlert(res.message, 'danger');
+    }
+  } catch(e) { showAlert('恢复失败: ' + e.message, 'danger'); }
+}
+
+// ── PVE Monitor ──
+async function refreshPVE() {
+  try {
+    const s = await api('GET', '/pve_status');
+    const el = document.getElementById('pveStatusContent');
+    if (!s.online) {
+      el.innerHTML = `<div class="alert alert-danger show">连接失败: ${s.error || '未知错误'}</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="pve-grid">
+      <div class="pve-item"><div class="val">${s.hostname || '-'}</div><div class="lbl">主机名</div></div>
+      <div class="pve-item"><div class="val">${s.pve_version || '-'}</div><div class="lbl">PVE版本</div></div>
+      <div class="pve-item"><div class="val">${s.cpu_usage != null ? s.cpu_usage + '%' : '-'}</div><div class="lbl">CPU使用率</div></div>
+      <div class="pve-item"><div class="val">${s.mem_usage != null ? s.mem_usage + '%' : '-'}</div><div class="lbl">内存使用率</div></div>
+      <div class="pve-item"><div class="val">${s.disk_usage != null ? s.disk_usage + '%' : '-'}</div><div class="lbl">磁盘使用率</div></div>
+      <div class="pve-item"><div class="val">${s.cpu_temp != null ? s.cpu_temp + '°C' : '-'}</div><div class="lbl">CPU温度</div></div>
+      <div class="pve-item"><div class="val">${s.disk_temp != null ? s.disk_temp + '°C' : '-'}</div><div class="lbl">磁盘温度</div></div>
+      <div class="pve-item"><div class="val">${s.load_avg ? s.load_avg.join(', ') : '-'}</div><div class="lbl">系统负载</div></div>
+    </div>`;
+  } catch(e) { document.getElementById('pveStatusContent').innerHTML = `<div class="alert alert-danger show">加载失败: ${e.message}</div>`; }
+}
+
+async function refreshContainers() {
+  try {
+    const list = await api('GET', '/container_status');
+    const tbody = document.getElementById('containerListBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">无容器/虚拟机</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(v => {
+      const uptime = v.uptime ? formatUptime(v.uptime) : '-';
+      const type = v.type === 'qemu' ? 'QEMU' : 'LXC';
+      const running = v.status === 'running';
+      return `<tr>
+        <td><strong>${v.vmid}</strong></td>
+        <td>${v.displayName || v.name || '-'}</td>
+        <td>${type}</td>
+        <td><span class="dot ${running ? 'green' : 'red'}"></span>${v.status}</td>
+        <td>${v.cpu || '-'}</td>
+        <td>${v.mem || '-'} / ${v.maxmem || '-'}</td>
+        <td>${uptime}</td>
+        <td>
+          ${running ? `<button class="btn btn-warning btn-sm" onclick="vmAction(${v.vmid},'${v.type}','stop')">⏹ 停止</button>
+          <button class="btn btn-secondary btn-sm" onclick="vmAction(${v.vmid},'${v.type}','reboot')">🔄 重启</button>` :
+          `<button class="btn btn-success btn-sm" onclick="vmAction(${v.vmid},'${v.type}','start')">▶ 启动</button>`}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('containerListBody').innerHTML = `<tr><td colspan="8" class="empty">加载失败: ${e.message}</td></tr>`;
+  }
+}
+
+function formatUptime(s) {
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  let r = '';
+  if (d > 0) r += d + '天';
+  if (h > 0) r += h + '小时';
+  r += m + '分钟';
+  return r;
+}
+
+async function vmAction(vmid, type, action) {
+  if (!confirm(`确定对 ${type.toUpperCase()} ${vmid} 执行 ${action} 操作?`)) return;
+  try {
+    const res = await api('POST', '/container_action', { vmid: String(vmid), type, action });
+    if (res.success) { showAlert(res.message, 'success'); setTimeout(refreshContainers, 3000); }
+    else { showAlert(res.message, 'danger'); }
+  } catch(e) { showAlert('操作失败', 'danger'); }
+}
+
+async function stopAllTasks() {
+  try {
+    const res = await api('POST', '/stop_all_tasks');
+    showAlert(res.message, 'info');
+  } catch(e) { showAlert('操作失败', 'danger'); }
+}
+
+// ── Change Password ──
+function showChangePassword() {
+  document.getElementById("changePwdModal").classList.add("active");
+  document.getElementById("oldPwd").value = "";
+  document.getElementById("newPwd").value = "";
+  document.getElementById("confirmPwd").value = "";
+  document.getElementById("changePwdError").style.display = "none";
+}
+function closeChangePassword() {
+  document.getElementById("changePwdModal").classList.remove("active");
+}
+async function doChangePassword() {
+  var oldPwd = document.getElementById("oldPwd").value;
+  var newPwd = document.getElementById("newPwd").value;
+  var confirmPwd = document.getElementById("confirmPwd").value;
+  var errEl = document.getElementById("changePwdError");
+  if (!oldPwd) { errEl.textContent = "请输入当前密码"; errEl.style.display = "block"; return; }
+  if (!newPwd) { errEl.textContent = "请输入新密码"; errEl.style.display = "block"; return; }
+  if (newPwd.length < 4) { errEl.textContent = "新密码至少4个字符"; errEl.style.display = "block"; return; }
+  if (newPwd !== confirmPwd) { errEl.textContent = "两次输入的新密码不一致"; errEl.style.display = "block"; return; }
+  var btn = document.getElementById("changePwdBtn");
+  btn.disabled = true;
+  try {
+    var r = await fetch("/api/change_password", {
+      method: "POST", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ old_password: oldPwd, new_password: newPwd })
+    });
+    var d = await r.json();
+    if (d.success) {
+      closeChangePassword();
+      showAlert("密码修改成功", "success");
+    } else {
+      errEl.textContent = d.message;
+      errEl.style.display = "block";
+    }
+  } catch(e) { errEl.textContent = "网络错误"; errEl.style.display = "block"; }
+  btn.disabled = false;
+}
+
+// ── Notification UI ──
+function toggleNotifyChannels() {
+  document.getElementById('notifyChannelsSection').style.display =
+    document.getElementById('cfg_notify').checked ? 'block' : 'none';
+}
+
+function toggleSection(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var arrow = el.previousElementSibling ? el.previousElementSibling.querySelector('.arrow') : null;
+  if (el.style.display === 'none' || el.style.display === '') {
+    el.style.display = 'block';
+    if (arrow) arrow.textContent = '▼';
+  } else {
+    el.style.display = 'none';
+    if (arrow) arrow.textContent = '▶';
+  }
+}
+
+async function testNotification() {
+  var btn = event && event.target ? event.target : document.querySelector('button[onclick="testNotification()"]');
+  btn.disabled = true;
+  btn.textContent = '⏳ 发送中...';
+  try {
+    var res = await api('POST', '/test_notification');
+    if (res.success) {
+      var lines = [];
+      for (var ch in res.results) {
+        var r = res.results[ch];
+        var label = {webhook: 'Webhook', bark: 'Bark', pushdeer: 'PushDeer', serverchan: 'Server酱'}[ch] || ch;
+        if (r.sent) {
+          lines.push('✅ ' + label + ': 发送成功');
+        } else if (r.error === '未启用') {
+          lines.push('⏭️ ' + label + ': 未启用');
+        } else {
+          lines.push('❌ ' + label + ': ' + (r.error || '发送失败'));
+        }
+      }
+      showAlert(lines.join(' | '), 'info');
+    } else {
+      showAlert('测试通知失败', 'danger');
+    }
+  } catch(e) {
+    showAlert('测试通知异常: ' + e.message, 'danger');
+  }
+  btn.disabled = false;
+  btn.textContent = '📤 测试通知';
+}
+
+// ── Init ──
+checkAuth();
+</script>
+</body>
+</html>

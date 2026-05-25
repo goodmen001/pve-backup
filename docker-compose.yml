@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  pve-backup:
+    build: .
+    container_name: pve-backup
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/data
+      - ./backups:/backups
+    environment:
+      - PVE_BACKUP_HOST=0.0.0.0
+      - PVE_BACKUP_PORT=5000
+      - PVE_BACKUP_DATA_DIR=/data
+      - PVE_BACKUP_DIR=/backups
+      - PVE_BACKUP_USE_WAITRESS=true
+      # 通知Webhook (可选)
+      - PVE_NOTIFY_WEBHOOK=
+      # API令牌 (用于外部访问)
+      - PVE_API_TOKEN=pve-backup-token
+    restart: unless-stopped
