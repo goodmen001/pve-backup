@@ -75,6 +75,9 @@ class BackupExecutor:
 
         except Exception as e:
             logger.error(f"备份主流程异常: {e}")
+            self.ctx.notification_handler.send_backup_notification(
+                success=False, message=f"备份主流程异常: {e}", backup_details={}
+            )
         finally:
             self.ctx._running = False
             self.ctx._backup_activity = "空闲"
