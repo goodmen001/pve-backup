@@ -925,6 +925,9 @@ async function testNotification() {
 
 // ── Init ──
 checkAuth();
+
+// Auto refresh dashboard every 10s
+setInterval(refreshDashboard, 10000);
 </script>
 </body>
 </html>
