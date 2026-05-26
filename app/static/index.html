@@ -265,7 +265,7 @@ tr:hover{background:#f8f9fa}
         <!-- Webhook -->
         <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyWebhook')">
           <span class="arrow">▶</span>
-          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_webhook_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          <label class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_webhook_enabled"><span class="slider"></span></label>
           Webhook 通用通知
         </div>
         <div id="notifyWebhook" class="section-body" style="display:none">
@@ -279,7 +279,7 @@ tr:hover{background:#f8f9fa}
         <!-- Bark -->
         <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyBark')">
           <span class="arrow">▶</span>
-          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_bark_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          <label class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_bark_enabled"><span class="slider"></span></label>
           Bark (iOS推送)
         </div>
         <div id="notifyBark" class="section-body" style="display:none">
@@ -291,7 +291,7 @@ tr:hover{background:#f8f9fa}
         <!-- PushDeer -->
         <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyPushdeer')">
           <span class="arrow">▶</span>
-          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_pushdeer_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          <label class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_pushdeer_enabled"><span class="slider"></span></label>
           PushDeer
         </div>
         <div id="notifyPushdeer" class="section-body" style="display:none">
@@ -303,7 +303,7 @@ tr:hover{background:#f8f9fa}
         <!-- Server酱 -->
         <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyServerchan')">
           <span class="arrow">▶</span>
-          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_serverchan_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          <label class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_serverchan_enabled"><span class="slider"></span></label>
           Server酱 (微信推送)
         </div>
         <div id="notifyServerchan" class="section-body" style="display:none">
@@ -314,11 +314,11 @@ tr:hover{background:#f8f9fa}
         <!-- Gotify -->
         <div class="section-toggle" onclick="if(event.target.tagName!=='INPUT')toggleSection('notifyGotify')">
           <span class="arrow">▶</span>
-          <span class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_gotify_enabled" onclick="event.stopPropagation()"><span class="slider"></span></span>
+          <label class="toggle" style="margin-right:8px"><input type="checkbox" id="ch_gotify_enabled"><span class="slider"></span></label>
           Gotify (自托管推送)
         </div>
         <div id="notifyGotify" class="section-body" style="display:none">
-          <div class="form-group"><label>服务器地址</label><input id="ch_gotify_server" placeholder="http://192.168.9.105:8080" value="http://192.168.9.105:8080"></div>
+          <div class="form-group"><label>服务器地址</label><input id="ch_gotify_server" placeholder="http://your-gotify-server:8080"></div>
           <div class="form-group"><label>App Token</label><input id="ch_gotify_token" placeholder="Axxxxxxxxx.xxxx"></div>
           <p style="color:#999;font-size:12px;margin-top:-8px;margin-bottom:12px">📌 Gotify是开源自托管消息推送服务，支持Android/Web端。在Gotify中创建应用获取App Token</p>
         </div>
@@ -589,7 +589,7 @@ async function loadConfig() {
     setChecked('ch_serverchan_enabled', nc.serverchan && nc.serverchan.enabled);
     setVal('ch_serverchan_key', (nc.serverchan && nc.serverchan.key) || '');
     setChecked('ch_gotify_enabled', nc.gotify && nc.gotify.enabled);
-    setVal('ch_gotify_server', (nc.gotify && nc.gotify.server) || 'http://192.168.9.105:8080');
+    setVal('ch_gotify_server', (nc.gotify && nc.gotify.server) || '');
     setVal('ch_gotify_token', (nc.gotify && nc.gotify.token) || '');
     toggleNotifyChannels();
   } catch(e) { showAlert('加载配置失败: ' + e.message, 'danger'); }
@@ -621,7 +621,7 @@ function collectConfig() {
       bark: { enabled: ch('ch_bark_enabled'), key: getVal('ch_bark_key'), server: getVal('ch_bark_server') || 'https://api.day.app' },
       pushdeer: { enabled: ch('ch_pushdeer_enabled'), key: getVal('ch_pushdeer_key'), server: getVal('ch_pushdeer_server') || 'https://api2.pushdeer.com' },
       serverchan: { enabled: ch('ch_serverchan_enabled'), key: getVal('ch_serverchan_key') },
-      gotify: { enabled: ch('ch_gotify_enabled'), server: getVal('ch_gotify_server') || 'http://192.168.9.105:8080', token: getVal('ch_gotify_token') },
+      gotify: { enabled: ch('ch_gotify_enabled'), server: getVal('ch_gotify_server'), token: getVal('ch_gotify_token') },
     },
     enabled: document.getElementById('cfg_enabled').checked,
   };
