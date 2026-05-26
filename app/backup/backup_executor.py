@@ -63,8 +63,6 @@ class BackupExecutor:
                     self.ctx.notification_handler.send_backup_notification(
                         success=True, message="备份成功", filename=fname, backup_details=details
                     )
-                    entry.update({"success": True, "filename": fname, "message": "成功"})
-                    self.ctx.history_handler.save_backup_history_entry(entry)
                     return
                 else:
                     logger.warning(f"第{i+1}次备份失败: {err_msg}")
@@ -129,6 +127,7 @@ class BackupExecutor:
             sftp = ssh.open_sftp()
             all_ok = True
             downloaded = []
+            successful_vmids = []
 
             for vmid in vmid_list:
                 logger.info(f"备份 VMID: {vmid}")
@@ -156,6 +155,7 @@ class BackupExecutor:
                 ok, err, fn, det = self.ctx.backup_manager.download_single_backup_file(ssh, sftp, created, os.path.basename(created))
                 if ok:
                     downloaded.append({"filename": fn, "details": det})
+                    successful_vmids.append(vmid)
                     logger.info(f"VMID {vmid} 备份完成: {fn}")
                 else:
                     logger.error(f"VMID {vmid} 处理失败: {err}")
@@ -171,10 +171,10 @@ class BackupExecutor:
                 fnames = [d["filename"] for d in downloaded]
                 self.ctx.history_handler.save_backup_history_entry({
                     "timestamp": time.time(), "success": True,
-                    "filename": ", ".join(fnames), "message": f"备份成功 [VMIDs: {', '.join(vmid_list[:len(downloaded)])}]",
+                    "filename": ", ".join(fnames), "message": f"备份成功 [VMIDs: {', '.join(successful_vmids)}]",
                 })
-                last = downloaded[-1]
-                return True, None, last["filename"], {"downloaded_files": downloaded}
+                all_fnames = ", ".join(fnames)
+                return True, None, all_fnames, {"downloaded_files": downloaded}
             else:
                 self.ctx.history_handler.save_backup_history_entry({
                     "timestamp": time.time(), "success": False,
