@@ -418,6 +418,7 @@ function switchTab(name) {
   if (name === 'backups') refreshBackups();
   if (name === 'pve') { refreshPVE(); refreshContainers(); }
   if (name === 'restore') { refreshRestoreHistory(); refreshRestoreFiles(); }
+  if (name === 'config') loadConfig();
 }
 
 // ── Alert ──
@@ -446,6 +447,7 @@ async function checkAuth() {
     if (data.authenticated) {
       showApp();
       refreshDashboard();
+      loadConfig();
     }
   } catch(e) {}
 }
@@ -466,6 +468,7 @@ async function doLogin() {
     if (data.success) {
       showApp();
       refreshDashboard();
+      loadConfig();
     } else {
       err.style.display = 'block';
     }
