@@ -552,7 +552,6 @@ async function loadConfig() {
     setVal('cfg_storage', c.storage_name || 'local');
     setVal('cfg_mode', c.backup_mode || 'snapshot');
     setVal('cfg_compress', c.compress_mode || 'zstd');
-    setChecked('cfg_autodel', false); // removed
     setChecked('cfg_webdav_enable', c.enable_webdav || false);
     setVal('cfg_webdav_url', c.webdav_url || '');
     setVal('cfg_webdav_path', c.webdav_path || '');
