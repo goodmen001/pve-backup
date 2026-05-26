@@ -69,16 +69,12 @@ class BackupExecutor:
                     if i < getattr(self.ctx, "_retry_count", 0):
                         time.sleep(getattr(self.ctx, "_retry_interval", 60))
 
-            entry["message"] = f"备份失败: {err_msg}"
-            self.ctx.history_handler.save_backup_history_entry(entry)
             self.ctx.notification_handler.send_backup_notification(
-                success=False, message=entry["message"], backup_details={}
+                success=False, message=f"备份失败: {err_msg}", backup_details={}
             )
 
         except Exception as e:
             logger.error(f"备份主流程异常: {e}")
-            entry["message"] = f"异常: {e}"
-            self.ctx.history_handler.save_backup_history_entry(entry)
         finally:
             self.ctx._running = False
             self.ctx._backup_activity = "空闲"
@@ -169,12 +165,21 @@ class BackupExecutor:
 
             if downloaded:
                 fnames = [d["filename"] for d in downloaded]
-                self.ctx.history_handler.save_backup_history_entry({
-                    "timestamp": time.time(), "success": True,
-                    "filename": ", ".join(fnames), "message": f"备份成功 [VMIDs: {', '.join(successful_vmids)}]",
-                })
-                all_fnames = ", ".join(fnames)
-                return True, None, all_fnames, {"downloaded_files": downloaded}
+                if all_ok:
+                    self.ctx.history_handler.save_backup_history_entry({
+                        "timestamp": time.time(), "success": True,
+                        "filename": ", ".join(fnames), "message": f"备份成功 [VMIDs: {', '.join(successful_vmids)}]",
+                    })
+                    all_fnames = ", ".join(fnames)
+                    return True, None, all_fnames, {"downloaded_files": downloaded}
+                else:
+                    failed_vmids = [v for v in vmid_list if v not in successful_vmids]
+                    self.ctx.history_handler.save_backup_history_entry({
+                        "timestamp": time.time(), "success": False,
+                        "filename": ", ".join(fnames),
+                        "message": f"部分VMID备份失败 [成功: {', '.join(successful_vmids)}] [失败: {', '.join(failed_vmids)}]",
+                    })
+                    return False, f"部分失败: {', '.join(failed_vmids)}", ", ".join(fnames), {"downloaded_files": downloaded}
             else:
                 self.ctx.history_handler.save_backup_history_entry({
                     "timestamp": time.time(), "success": False,
