@@ -794,8 +794,8 @@ async function refreshContainers() {
         <td>${v.displayName || v.name || '-'}</td>
         <td>${type}</td>
         <td><span class="dot ${running ? 'green' : 'red'}"></span>${v.status}</td>
-        <td>${v.cpu || '-'}</td>
-        <td>${v.mem || '-'} / ${v.maxmem || '-'}</td>
+        <td>${formatCpu(v.cpu)}</td>
+        <td>${formatMem(v.mem)} / ${formatMem(v.maxmem)}</td>
         <td>${uptime}</td>
         <td>
           ${running ? `<button class="btn btn-warning btn-sm" onclick="vmAction(${v.vmid},'${v.type}','stop')">⏹ 停止</button>
@@ -816,6 +816,18 @@ function formatUptime(s) {
   if (h > 0) r += h + '小时';
   r += m + '分钟';
   return r;
+}
+
+function formatCpu(v) {
+  if (v === '' || v === undefined || v === null) return '-';
+  return (parseFloat(v) * 100).toFixed(1) + '%';
+}
+
+function formatMem(bytes) {
+  if (!bytes || bytes === '' || bytes === 0) return '-';
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1024) return (mb / 1024).toFixed(1) + ' GB';
+  return mb.toFixed(0) + ' MB';
 }
 
 async function vmAction(vmid, type, action) {

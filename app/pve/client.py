@@ -286,19 +286,24 @@ def get_qemu_status(host, port, username, password, key_file):
                                 break
                     except Exception:
                         tags = ''
-                # 用paramiko invoke_shell方式获取uptime，兼容极端受限环境
+                # 用paramiko invoke_shell方式获取uptime及CPU/内存数据
                 uptime = 0
+                cpu_val = ''
+                mem_val = ''
+                maxmem_val = ''
                 if vmid:
                     try:
                         import json
                         stdin_uptime, stdout_uptime, stderr_uptime = ssh.exec_command(f"/usr/bin/pvesh get /nodes/{node_name}/qemu/{vmid}/status/current --output-format json")
                         output = stdout_uptime.read().decode()
                         data_json = json.loads(output)
-                        uptime = data_json.get('uptime', '')
+                        uptime = data_json.get('uptime', 0)
+                        cpu_val = data_json.get('cpu', '')
+                        mem_val = data_json.get('mem', '')
+                        maxmem_val = data_json.get('maxmem', '')
                     except Exception as e:
                         uptime = 0
                 status = data.get('status','')
-                # 移除冗余的status查询，qm list已经包含了status信息
                 vms.append({
                     'vmid': data.get('vmid',''),
                     'name': name,
@@ -306,9 +311,9 @@ def get_qemu_status(host, port, username, password, key_file):
                     'status': status,
                     'lock': data.get('lock',''),
                     'uptime': uptime,
-                    'cpu': data.get('cpu',''),
-                    'mem': data.get('mem',''),
-                    'maxmem': data.get('maxmem',''),
+                    'cpu': cpu_val,
+                    'mem': mem_val,
+                    'maxmem': maxmem_val,
                     'disk': data.get('disk',''),
                     'maxdisk': data.get('maxdisk',''),
                     'pid': data.get('pid',''),
@@ -362,6 +367,9 @@ def get_container_status(host, port, username, password, key_file):
                 display_name = name
                 tags = ''
                 uptime = 0
+                cpu_val = ''
+                mem_val = ''
+                maxmem_val = ''
                 vmid = data.get('vmid','')
                 if name.startswith('LXC-'):
                     try:
@@ -378,18 +386,20 @@ def get_container_status(host, port, username, password, key_file):
                                 break
                     except Exception:
                         tags = ''
-                # 用paramiko invoke_shell方式获取uptime，兼容极端受限环境
+                # 用paramiko invoke_shell方式获取uptime及CPU/内存数据
                 if vmid:
                     try:
                         import json
                         stdin_uptime, stdout_uptime, stderr_uptime = ssh.exec_command(f"/usr/bin/pvesh get /nodes/{node_name}/lxc/{vmid}/status/current --output-format json")
                         output = stdout_uptime.read().decode()
                         data_json = json.loads(output)
-                        uptime = data_json.get('uptime', '')
+                        uptime = data_json.get('uptime', 0)
+                        cpu_val = data_json.get('cpu', '')
+                        mem_val = data_json.get('mem', '')
+                        maxmem_val = data_json.get('maxmem', '')
                     except Exception as e:
                         uptime = 0
                 status = data.get('status','')
-                # 移除冗余的status查询，pct list已经包含了status信息
                 containers.append({
                     'vmid': data.get('vmid',''),
                     'name': name,
@@ -397,9 +407,9 @@ def get_container_status(host, port, username, password, key_file):
                     'status': status,
                     'lock': data.get('lock',''),
                     'uptime': uptime,
-                    'cpu': data.get('cpu',''),
-                    'mem': data.get('mem',''),
-                    'maxmem': data.get('maxmem',''),
+                    'cpu': cpu_val,
+                    'mem': mem_val,
+                    'maxmem': maxmem_val,
                     'swap': data.get('swap',''),
                     'maxswap': data.get('maxswap',''),
                     'disk': data.get('disk',''),
